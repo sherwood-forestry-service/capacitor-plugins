@@ -397,7 +397,7 @@ private extension CameraPlugin {
     }
 
     func showPrompt() {
-        Locator.shared.authorize();
+        Locator.shared.authorize()
         Locator.shared.getLocation { result in
             print("Location Result: \(String(describing: result))")
             switch result {
@@ -409,7 +409,7 @@ private extension CameraPlugin {
                     print(error)
             }
          }
-        
+
         Locator.shared.getHeading { result in
             print("Heading Result: \(String(describing: result))")
             switch result {
@@ -584,7 +584,7 @@ private extension CameraPlugin {
         metadata[kCGImagePropertyGPSDictionary as String] = self.currentLocation.exifMetadata(heading: self.currentHeading)
 
         print("Meta Data: \(String(describing: metadata))")
-        
+
         // get the result
         var result = processedImage(from: image, with: metadata)
         result.flags = flags
