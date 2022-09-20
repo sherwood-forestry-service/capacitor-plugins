@@ -52,7 +52,7 @@ internal extension PHAsset {
         options.version = .current
 
         var result: [String: Any] = [:]
-        _ = PHCachingImageManager().requestImageData(for: self, options: options) { (data, _, _, _) in
+        _ = PHCachingImageManager().requestImageDataAndOrientation(for: self, options: options) { (data, _, _, _) in
             if let data = data as NSData? {
                 let options = [kCGImageSourceShouldCache as String: kCFBooleanFalse] as CFDictionary
                 if let imgSrc = CGImageSourceCreateWithData(data, options),
@@ -88,7 +88,7 @@ internal extension UIImage {
         }
         // adjust to preserve aspect ratio
         var targetWidth = min(imageWidth, maxWidth)
-        var targetHeight = (imageHeight * maxWidth) / imageWidth
+        var targetHeight = (imageHeight * targetWidth) / imageWidth
         if targetHeight > maxHeight {
             targetWidth = (imageWidth * maxHeight) / imageHeight
             targetHeight = maxHeight

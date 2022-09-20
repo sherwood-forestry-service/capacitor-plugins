@@ -12,7 +12,7 @@ export class AppWeb extends WebPlugin implements AppPlugin {
     );
   }
 
-  exitApp(): never {
+  exitApp(): Promise<void> {
     throw this.unimplemented('Not implemented on web.');
   }
 
@@ -26,6 +26,10 @@ export class AppWeb extends WebPlugin implements AppPlugin {
 
   async getState(): Promise<AppState> {
     return { isActive: document.hidden !== true };
+  }
+
+  async minimizeApp(): Promise<void> {
+    throw this.unimplemented('Not implemented on web.');
   }
 
   private handleVisibilityChange = () => {

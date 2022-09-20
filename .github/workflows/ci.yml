@@ -38,7 +38,7 @@ jobs:
         with:
           files: ${{ steps.files.outputs.all }}
   lint:
-    runs-on: macos-latest
+    runs-on: macos-12
     timeout-minutes: 30
     needs:
       - setup
@@ -58,7 +58,7 @@ jobs:
       - run: npm install
       - run: npm run lint
   verify-ios:
-    runs-on: macos-latest
+    runs-on: macos-12
     if: needs.setup.outputs.plugins != '[]'
     timeout-minutes: 30
     needs:
@@ -66,8 +66,11 @@ jobs:
       - lint
     strategy:
       matrix:
+        xcode:
+          - /Applications/Xcode_13.3.1.app
         plugin: ${{ fromJson(needs.setup.outputs.plugins) }}
     steps:
+      - run: sudo xcode-select --switch ${{ matrix.xcode }}
       - uses: actions/setup-node@v1
         with:
           node-version: 14.x
