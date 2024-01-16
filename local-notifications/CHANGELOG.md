@@ -3,48 +3,155 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.0.6](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@5.0.5...@capacitor/local-notifications@5.0.6) (2023-07-12)
+
+
+### Bug Fixes
+
+* **local-notifications:** make requestPermissions resolve if granted ([#1678](https://github.com/ionic-team/capacitor-plugins/issues/1678)) ([4872589](https://github.com/ionic-team/capacitor-plugins/commit/487258940e0d1c27deeaa6326760095fc2549715))
+
+
+
+
+
+## [5.0.5](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@5.0.4...@capacitor/local-notifications@5.0.5) (2023-06-29)
+
+**Note:** Version bump only for package @capacitor/local-notifications
+
+
+
+
+
+## [5.0.4](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@5.0.3...@capacitor/local-notifications@5.0.4) (2023-06-08)
+
+**Note:** Version bump only for package @capacitor/local-notifications
+
+
+
+
+
+## [5.0.3](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@5.0.2...@capacitor/local-notifications@5.0.3) (2023-06-08)
+
+**Note:** Version bump only for package @capacitor/local-notifications
+
+
+
+
+
+## [5.0.2](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@5.0.1...@capacitor/local-notifications@5.0.2) (2023-05-09)
+
+**Note:** Version bump only for package @capacitor/local-notifications
+
+
+
+
+
+## [5.0.1](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@5.0.0...@capacitor/local-notifications@5.0.1) (2023-05-05)
+
+
+### Bug Fixes
+
+* Use Capacitor 5 final ([#1574](https://github.com/ionic-team/capacitor-plugins/issues/1574)) ([139c18b](https://github.com/ionic-team/capacitor-plugins/commit/139c18b86a11d31246e952d1a74335ff8ce5dbc2))
+
+
+
+
+
+# [5.0.0](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@5.0.0-beta.1...@capacitor/local-notifications@5.0.0) (2023-05-03)
+
+**Note:** Version bump only for package @capacitor/local-notifications
+
+
+
+
+
+# [5.0.0-beta.1](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@5.0.0-beta.0...@capacitor/local-notifications@5.0.0-beta.1) (2023-04-21)
+
+
+### Features
+
+* Update gradle to 8.0.2 and gradle plugin to 8.0.0 ([#1542](https://github.com/ionic-team/capacitor-plugins/issues/1542)) ([e7210b4](https://github.com/ionic-team/capacitor-plugins/commit/e7210b47867644f5983e37acdbf0247214ec232d))
+
+
+
+
+
+# [5.0.0-beta.0](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@5.0.0-alpha.1...@capacitor/local-notifications@5.0.0-beta.0) (2023-03-31)
+
+**Note:** Version bump only for package @capacitor/local-notifications
+
+
+
+
+
+# [5.0.0-alpha.1](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@4.1.5...@capacitor/local-notifications@5.0.0-alpha.1) (2023-03-16)
+
+
+### Features
+
+* **android:** Removing enableJetifier ([d66f9cb](https://github.com/ionic-team/capacitor-plugins/commit/d66f9cbd9da7e3b1d8c64ca6a5b45156867d4a04))
+* **local-notifications:** support Android 13+ permissions ([#1189](https://github.com/ionic-team/capacitor-plugins/issues/1189)) ([ace7d73](https://github.com/ionic-team/capacitor-plugins/commit/ace7d73c57a1a8ca780d91bd1dace70eb226b21e))
+
+
+
+
+
+## [4.1.5](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@4.1.4...@capacitor/local-notifications@4.1.5) (2023-02-03)
+
+
+### Bug Fixes
+
+* **local-notifications:** Use RTC_WAKEUP if schedule.allowWhileIdle is true ([#1362](https://github.com/ionic-team/capacitor-plugins/issues/1362)) ([1cd2259](https://github.com/ionic-team/capacitor-plugins/commit/1cd2259e33694d8aeb819f1713ccbc88600211b0))
+
+
+
+
+
+## [4.1.4](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@4.1.3...@capacitor/local-notifications@4.1.4) (2022-12-01)
+
+
+### Bug Fixes
+
+* **local-notifications:** error if notification id is bigger than allowed ([#1303](https://github.com/ionic-team/capacitor-plugins/issues/1303)) ([df7e2f5](https://github.com/ionic-team/capacitor-plugins/commit/df7e2f5a35879e618f0c3d50fe1a4b3ef4380b0e))
+
+
+
+
+
+## [4.1.3](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@4.1.2...@capacitor/local-notifications@4.1.3) (2022-11-16)
+
+**Note:** Version bump only for package @capacitor/local-notifications
+
+
+
+
+
+## [4.1.2](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@4.1.1...@capacitor/local-notifications@4.1.2) (2022-10-21)
+
+**Note:** Version bump only for package @capacitor/local-notifications
+
+
+
+
+
+## [4.1.1](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@4.1.0...@capacitor/local-notifications@4.1.1) (2022-09-29)
+
+
+### Bug Fixes
+
+* **local-notifications:** Add FLAG_MUTABLE to schedule on notifications ([#1173](https://github.com/ionic-team/capacitor-plugins/issues/1173)) ([98a5cb1](https://github.com/ionic-team/capacitor-plugins/commit/98a5cb1c60598bd3932a47dceb1f8918241ce8cb))
+* **local-notifications:** Showing correct scheduled notification time ([#1198](https://github.com/ionic-team/capacitor-plugins/issues/1198)) ([96c5430](https://github.com/ionic-team/capacitor-plugins/commit/96c5430f9bae13b54f3897dd1bffad030bfe3a3b))
+
+
+
+
+
 # [4.1.0](https://github.com/ionic-team/capacitor-plugins/compare/@capacitor/local-notifications@1.1.0...@capacitor/local-notifications@4.1.0) (2022-09-12)
 
 
 ### Bug Fixes
 
 * **local-notifications:** prevent crash on restoring old notifications ([#1156](https://github.com/ionic-team/capacitor-plugins/issues/1156)) ([8c65584](https://github.com/ionic-team/capacitor-plugins/commit/8c655843ebbee5ab02503d7a10dd8296aa56ab04))
-
-
-
-## 4.0.1 (2022-07-28)
-
-
-
-# 4.0.0 (2022-07-27)
-
-
-
-# 4.0.0-beta.2 (2022-07-08)
-
-
-### Features
-
-* **local-notifications:** Add delivered notification handling ([#1060](https://github.com/ionic-team/capacitor-plugins/issues/1060)) ([0a89dc9](https://github.com/ionic-team/capacitor-plugins/commit/0a89dc97407685a7f1ec97532af304115fea7a0f))
-
-
-
-# 4.0.0-beta.0 (2022-06-27)
-
-
-### Bug Fixes
-
-* **local-notifications:** Add FLAG_MUTABLE to pending intents for SDK 31 support ([#914](https://github.com/ionic-team/capacitor-plugins/issues/914)) ([9ad0ce6](https://github.com/ionic-team/capacitor-plugins/commit/9ad0ce6f1497f425db907908be1b125e6ed83dbc))
-* **local-notifications:** Handle case of not allowed exact notifications ([#954](https://github.com/ionic-team/capacitor-plugins/issues/954)) ([5016996](https://github.com/ionic-team/capacitor-plugins/commit/5016996b3a4e9824d8dd2bc4c71892fc5dbc7365))
-* Make removeAllListeners return a promise ([#895](https://github.com/ionic-team/capacitor-plugins/issues/895)) ([e5c49d6](https://github.com/ionic-team/capacitor-plugins/commit/e5c49d64445dca70286334e6a0441d8021197b13))
-
-
-### Features
-
-* set targetSDK default value to 31 ([#824](https://github.com/ionic-team/capacitor-plugins/issues/824)) ([3ee10de](https://github.com/ionic-team/capacitor-plugins/commit/3ee10de98067984c1a4e75295d001c5a895c47f4))
-* set targetSDK default value to 32 ([#970](https://github.com/ionic-team/capacitor-plugins/issues/970)) ([fa70d96](https://github.com/ionic-team/capacitor-plugins/commit/fa70d96f141af751aae53ceb5642c46b204f5958))
-* Upgrade gradle to 7.4 ([#826](https://github.com/ionic-team/capacitor-plugins/issues/826)) ([5db0906](https://github.com/ionic-team/capacitor-plugins/commit/5db0906f6264287c4f8e69dbaecf19d4d387824b))
-* Use java 11 ([#910](https://github.com/ionic-team/capacitor-plugins/issues/910)) ([5acb2a2](https://github.com/ionic-team/capacitor-plugins/commit/5acb2a288a413492b163e4e97da46a085d9e4be0))
 
 
 
