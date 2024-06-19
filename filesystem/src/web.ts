@@ -1,8 +1,9 @@
-import { WebPlugin } from '@capacitor/core';
+import { WebPlugin, buildRequestInit } from '@capacitor/core';
 
 import type {
   AppendFileOptions,
   CopyOptions,
+  CopyResult,
   DeleteFileOptions,
   FilesystemPlugin,
   GetUriOptions,
@@ -20,7 +21,41 @@ import type {
   WriteFileOptions,
   WriteFileResult,
   Directory,
+  DownloadFileOptions,
+  DownloadFileResult,
+  ProgressStatus,
 } from './definitions';
+import { Encoding } from './definitions';
+
+function resolve(path: string): string {
+  const posix = path.split('/').filter(item => item !== '.');
+  const newPosix: string[] = [];
+
+  posix.forEach(item => {
+    if (
+      item === '..' &&
+      newPosix.length > 0 &&
+      newPosix[newPosix.length - 1] !== '..'
+    ) {
+      newPosix.pop();
+    } else {
+      newPosix.push(item);
+    }
+  });
+
+  return newPosix.join('/');
+}
+function isPathParent(parent: string, children: string): boolean {
+  parent = resolve(parent);
+  children = resolve(children);
+  const pathsA = parent.split('/');
+  const pathsB = children.split('/');
+
+  return (
+    parent !== children &&
+    pathsA.every((value, index) => value === pathsB[index])
+  );
+}
 
 export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
   DB_VERSION = 1;
@@ -140,14 +175,14 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
    */
   async writeFile(options: WriteFileOptions): Promise<WriteFileResult> {
     const path: string = this.getPath(options.directory, options.path);
-    const data = options.data;
+    let data = options.data;
+    const encoding = options.encoding;
     const doRecursive = options.recursive;
 
     const occupiedEntry = (await this.dbRequest('get', [path])) as EntryObj;
     if (occupiedEntry && occupiedEntry.type === 'directory')
-      throw 'The supplied path is a directory.';
+      throw Error('The supplied path is a directory.');
 
-    const encoding = options.encoding;
     const parentPath = path.substr(0, path.lastIndexOf('/'));
 
     const parentEntry = (await this.dbRequest('get', [parentPath])) as EntryObj;
@@ -162,15 +197,22 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
         });
       }
     }
+
+    if (!encoding && !(data instanceof Blob)) {
+      data = data.indexOf(',') >= 0 ? data.split(',')[1] : data;
+      if (!this.isBase64String(data))
+        throw Error('The supplied data is not valid base64 content.');
+    }
+
     const now = Date.now();
     const pathObj: EntryObj = {
       path: path,
       folder: parentPath,
       type: 'file',
-      size: data.length,
+      size: data instanceof Blob ? data.size : data.length,
       ctime: now,
       mtime: now,
-      content: !encoding && data.indexOf(',') >= 0 ? data.split(',')[1] : data,
+      content: data,
     };
     await this.dbRequest('put', [pathObj]);
     return {
@@ -186,7 +228,7 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
   async appendFile(options: AppendFileOptions): Promise<void> {
     const path: string = this.getPath(options.directory, options.path);
     let data = options.data;
-    // const encoding = options.encoding;
+    const encoding = options.encoding;
     const parentPath = path.substr(0, path.lastIndexOf('/'));
 
     const now = Date.now();
@@ -194,7 +236,7 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
 
     const occupiedEntry = (await this.dbRequest('get', [path])) as EntryObj;
     if (occupiedEntry && occupiedEntry.type === 'directory')
-      throw 'The supplied path is a directory.';
+      throw Error('The supplied path is a directory.');
 
     const parentEntry = (await this.dbRequest('get', [parentPath])) as EntryObj;
     if (parentEntry === undefined) {
@@ -209,8 +251,21 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
       }
     }
 
+    if (!encoding && !this.isBase64String(data))
+      throw Error('The supplied data is not valid base64 content.');
+
     if (occupiedEntry !== undefined) {
-      data = occupiedEntry.content + data;
+      if (occupiedEntry.content instanceof Blob) {
+        throw Error(
+          'The occupied entry contains a Blob object which cannot be appended to.',
+        );
+      }
+
+      if (occupiedEntry.content !== undefined && !encoding) {
+        data = btoa(atob(occupiedEntry.content) + atob(data));
+      } else {
+        data = occupiedEntry.content + data;
+      }
       ctime = occupiedEntry.ctime;
     }
     const pathObj: EntryObj = {
@@ -303,7 +358,7 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
       throw Error('Folder is not empty');
 
     for (const entry of readDirResult.files) {
-      const entryPath = `${path}/${entry}`;
+      const entryPath = `${path}/${entry.name}`;
       const entryObj = await this.stat({ path: entryPath, directory });
       if (entryObj.type === 'file') {
         await this.deleteFile({ path: entryPath, directory });
@@ -332,10 +387,23 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
       'getAllKeys',
       [IDBKeyRange.only(path)],
     );
-    const names = entries.map(e => {
-      return e.substring(path.length + 1);
-    });
-    return { files: names };
+    const files = await Promise.all(
+      entries.map(async e => {
+        let subEntry = (await this.dbRequest('get', [e])) as EntryObj;
+        if (subEntry === undefined) {
+          subEntry = (await this.dbRequest('get', [e + '/'])) as EntryObj;
+        }
+        return {
+          name: e.substring(path.length + 1),
+          type: subEntry.type,
+          size: subEntry.size,
+          ctime: subEntry.ctime,
+          mtime: subEntry.mtime,
+          uri: subEntry.path,
+        };
+      }),
+    );
+    return { files: files };
   }
 
   /**
@@ -384,7 +452,8 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
    * @return a promise that resolves with the rename result
    */
   async rename(options: RenameOptions): Promise<void> {
-    return this._copy(options, true);
+    await this._copy(options, true);
+    return;
   }
 
   /**
@@ -392,7 +461,7 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
    * @param options the options for the copy operation
    * @return a promise that resolves with the copy result
    */
-  async copy(options: CopyOptions): Promise<void> {
+  async copy(options: CopyOptions): Promise<CopyResult> {
     return this._copy(options, false);
   }
 
@@ -410,7 +479,10 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
    * @param doRename whether to perform a rename or copy operation
    * @return a promise that resolves with the result
    */
-  private async _copy(options: CopyOptions, doRename = false): Promise<void> {
+  private async _copy(
+    options: CopyOptions,
+    doRename = false,
+  ): Promise<CopyResult> {
     let { toDirectory } = options;
     const { to, from, directory: fromDirectory } = options;
 
@@ -428,10 +500,12 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
 
     // Test that the "to" and "from" locations are different
     if (fromPath === toPath) {
-      return;
+      return {
+        uri: toPath,
+      };
     }
 
-    if (toPath.startsWith(fromPath)) {
+    if (isPathParent(fromPath, toPath)) {
       throw Error('To path cannot contain the from path');
     }
 
@@ -500,11 +574,17 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
           });
         }
 
+        let encoding;
+        if (!(file.data instanceof Blob) && !this.isBase64String(file.data)) {
+          encoding = Encoding.UTF8;
+        }
+
         // Write the file to the new location
-        await this.writeFile({
+        const writeResult = await this.writeFile({
           path: to,
           directory: toDirectory,
           data: file.data,
+          encoding: encoding,
         });
 
         // Copy the mtime/ctime of a renamed file
@@ -513,7 +593,7 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
         }
 
         // Resolve promise
-        return;
+        return writeResult;
       }
       case 'directory': {
         if (toObj) {
@@ -548,8 +628,8 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
           // Move item from the from directory to the to directory
           await this._copy(
             {
-              from: `${from}/${filename}`,
-              to: `${to}/${filename}`,
+              from: `${from}/${filename.name}`,
+              to: `${to}/${filename.name}`,
               directory: fromDirectory,
               toDirectory,
             },
@@ -566,16 +646,93 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
         }
       }
     }
+    return {
+      uri: toPath,
+    };
+  }
+
+  /**
+   * Function that performs a http request to a server and downloads the file to the specified destination
+   *
+   * @param options the options for the download operation
+   * @returns a promise that resolves with the download file result
+   */
+  public downloadFile = async (
+    options: DownloadFileOptions,
+  ): Promise<DownloadFileResult> => {
+    const requestInit = buildRequestInit(options, options.webFetchExtra);
+    const response = await fetch(options.url, requestInit);
+    let blob: Blob;
+
+    if (!options.progress) blob = await response.blob();
+    else if (!response?.body) blob = new Blob();
+    else {
+      const reader = response.body.getReader();
+
+      let bytes = 0;
+      const chunks: (Uint8Array | undefined)[] = [];
+
+      const contentType: string | null = response.headers.get('content-type');
+      const contentLength: number = parseInt(
+        response.headers.get('content-length') || '0',
+        10,
+      );
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        chunks.push(value);
+        bytes += value?.length || 0;
+
+        const status: ProgressStatus = {
+          url: options.url,
+          bytes,
+          contentLength,
+        };
+
+        this.notifyListeners('progress', status);
+      }
+
+      const allChunks = new Uint8Array(bytes);
+      let position = 0;
+      for (const chunk of chunks) {
+        if (typeof chunk === 'undefined') continue;
+
+        allChunks.set(chunk, position);
+        position += chunk.length;
+      }
+
+      blob = new Blob([allChunks.buffer], { type: contentType || undefined });
+    }
+
+    const result = await this.writeFile({
+      path: options.path,
+      directory: options.directory ?? undefined,
+      recursive: options.recursive ?? false,
+      data: blob,
+    });
+
+    return { path: result.uri, blob };
+  };
+
+  private isBase64String(str: string): boolean {
+    try {
+      return btoa(atob(str)) == str;
+    } catch (err) {
+      return false;
+    }
   }
 }
 
 interface EntryObj {
   path: string;
   folder: string;
-  type: string;
+  type: 'directory' | 'file';
   size: number;
   ctime: number;
   mtime: number;
   uri?: string;
-  content?: string;
+  content?: string | Blob;
 }

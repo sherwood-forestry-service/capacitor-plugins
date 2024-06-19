@@ -2,10 +2,20 @@
 
 The Text Zoom API provides the ability to change Web View text size for visual accessibility.
 
+**Note:** text-zoom plugin won't work on iPads unless `preferredContentMode` configuration is set to `mobile` in your [Capacitor configuration file](https://capacitorjs.com/docs/config).
+
+```json
+{
+  "ios": {
+    "preferredContentMode": "mobile"
+  }
+}
+```
+
 ## Install
 
 ```bash
-npm install @capacitor/text-zoom
+npm install @capacitor/text-zoom@latest-5
 npx cap sync
 ```
 

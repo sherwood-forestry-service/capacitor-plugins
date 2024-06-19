@@ -52,6 +52,7 @@ NSTimer *hideTimer;
 NSString* UIClassString;
 NSString* WKClassString;
 NSString* UITraitsClassString;
+double stageManagerOffset;
 
 - (void)load
 {
@@ -60,13 +61,13 @@ NSString* UITraitsClassString;
   UIClassString = [@[@"UI", @"Web", @"Browser", @"View"] componentsJoinedByString:@""];
   WKClassString = [@[@"WK", @"Content", @"View"] componentsJoinedByString:@""];
   UITraitsClassString = [@[@"UI", @"Text", @"Input", @"Traits"] componentsJoinedByString:@""];
-  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(statusBarDidChangeFrame:) name:UIApplicationDidChangeStatusBarFrameNotification object: nil];
-    
-  NSString * style = [self getConfigValue:@"style"];
+
+  PluginConfig * config = [self getConfig];
+  NSString * style = [config getString:@"style": nil];
   [self changeKeyboardStyle:style.uppercaseString];
 
   self.keyboardResizes = ResizeNative;
-  NSString * resizeMode = [self getConfigValue:@"resize"];
+  NSString * resizeMode = [config getString:@"resize": nil];
 
   if ([resizeMode isEqualToString:@"none"]) {
     self.keyboardResizes = ResizeNone;
@@ -101,10 +102,6 @@ NSString* UITraitsClassString;
 
 #pragma mark Keyboard events
 
--(void)statusBarDidChangeFrame:(NSNotification *)notification {
-  [self _updateFrame];
-}
-
 - (void)resetScrollView
 {
   UIScrollView *scrollView = [self.webView scrollView];
@@ -124,12 +121,26 @@ NSString* UITraitsClassString;
 
 - (void)onKeyboardWillShow:(NSNotification *)notification
 {
-  [self changeKeyboardStyle:self.keyboardStyle];
   if (hideTimer != nil) {
     [hideTimer invalidate];
   }
   CGRect rect = [[notification.userInfo valueForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
+
   double height = rect.size.height;
+    
+  if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+    if (stageManagerOffset > 0) {
+      height = stageManagerOffset;
+    } else {
+      CGRect webViewAbsolute = [self.webView convertRect:self.webView.frame toCoordinateSpace:self.webView.window.screen.coordinateSpace];
+      height = (webViewAbsolute.size.height + webViewAbsolute.origin.y) - (UIScreen.mainScreen.bounds.size.height - rect.size.height);
+      if (height < 0) {
+        height = 0;
+      }
+        
+      stageManagerOffset = height;
+    }
+  }
 
   double duration = [[notification.userInfo valueForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue]+0.2;
   [self setKeyboardHeight:height delay:duration];
@@ -159,6 +170,8 @@ NSString* UITraitsClassString;
   [self.bridge triggerWindowJSEventWithEventName:@"keyboardDidHide"];
   [self notifyListeners:@"keyboardDidHide" data:nil];
   [self resetScrollView];
+
+  stageManagerOffset = 0;
 }
 
 - (void)setKeyboardHeight:(int)height delay:(NSTimeInterval)delay
@@ -191,18 +204,22 @@ NSString* UITraitsClassString;
 
 - (void)_updateFrame
 {
-  CGSize statusBarSize = [[UIApplication sharedApplication] statusBarFrame].size;
-  int statusBarHeight = MIN(statusBarSize.width, statusBarSize.height);
-  
-  int _paddingBottom = (int)self.paddingBottom;
-  
-  if (statusBarHeight == 40) {
-    _paddingBottom = _paddingBottom + 20;
-  }
   CGRect f, wf = CGRectZero;
-  id<UIApplicationDelegate> delegate = [[UIApplication sharedApplication] delegate];
-  if (delegate != nil && [delegate respondsToSelector:@selector(window)]) {
-    f = [[delegate window] bounds];
+  UIWindow * window = nil;
+    
+  if ([[[UIApplication sharedApplication] delegate] respondsToSelector:@selector(window)]) {
+    window = [[[UIApplication sharedApplication] delegate] window];
+  }
+  
+  if (!window) {
+    if (@available(iOS 13.0, *)) {
+      NSPredicate *predicate = [NSPredicate predicateWithFormat:@"self isKindOfClass: %@", UIWindowScene.class];
+      UIScene *scene = [UIApplication.sharedApplication.connectedScenes.allObjects filteredArrayUsingPredicate:predicate].firstObject;
+      window = [[(UIWindowScene*)scene windows] filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"isKeyWindow == YES"]].firstObject;
+    }
+  }
+  if (window) {
+    f = [window bounds];
   }
   if (self.webView != nil) {
     wf = self.webView.frame;
@@ -307,6 +324,7 @@ static IMP WKOriginalImp;
 - (void)setStyle:(CAPPluginCall *)call
 {
   self.keyboardStyle = [call getString:@"style" defaultValue:@"LIGHT"];
+  [self changeKeyboardStyle:self.keyboardStyle]; 
   [call resolve];
 }
 
@@ -323,6 +341,24 @@ static IMP WKOriginalImp;
     self.keyboardResizes = ResizeNone;
   }
   [call resolve];
+}
+
+- (void)getResizeMode:(CAPPluginCall *)call
+{
+    NSString *mode;
+    
+    if (self.keyboardResizes == ResizeIonic) {
+        mode = @"ionic";
+    } else if(self.keyboardResizes == ResizeBody) {
+        mode = @"body";
+    } else if (self.keyboardResizes == ResizeNative) {
+        mode = @"native";
+    } else {
+        mode = @"none";
+    }
+    
+    NSDictionary *response = [NSDictionary dictionaryWithObject:mode forKey:@"mode"];
+    [call resolve: response];
 }
 
 - (void)setScroll:(CAPPluginCall *)call {

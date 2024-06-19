@@ -3,6 +3,8 @@ import { WebPlugin, CapacitorException } from '@capacitor/core';
 import { CameraSource, CameraDirection } from './definitions';
 import type {
   CameraPlugin,
+  GalleryImageOptions,
+  GalleryPhotos,
   ImageOptions,
   PermissionStatus,
   Photo,
@@ -13,7 +15,7 @@ export class CameraWeb extends WebPlugin implements CameraPlugin {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise<Photo>(async (resolve, reject) => {
       if (options.webUseInput || options.source === CameraSource.Photos) {
-        this.fileInputExperience(options, resolve);
+        this.fileInputExperience(options, resolve, reject);
       } else if (options.source === CameraSource.Prompt) {
         let actionSheet: any = document.querySelector('pwa-action-sheet');
         if (!actionSheet) {
@@ -29,7 +31,7 @@ export class CameraWeb extends WebPlugin implements CameraPlugin {
         actionSheet.addEventListener('onSelection', async (e: any) => {
           const selection = e.detail;
           if (selection === 0) {
-            this.fileInputExperience(options, resolve);
+            this.fileInputExperience(options, resolve, reject);
           } else {
             this.cameraExperience(options, resolve, reject);
           }
@@ -40,6 +42,13 @@ export class CameraWeb extends WebPlugin implements CameraPlugin {
     });
   }
 
+  async pickImages(_options: GalleryImageOptions): Promise<GalleryPhotos> {
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise<GalleryPhotos>(async (resolve, reject) => {
+      this.multipleFileInputExperience(resolve, reject);
+    });
+  }
+
   private async cameraExperience(
     options: ImageOptions,
     resolve: any,
@@ -47,6 +56,8 @@ export class CameraWeb extends WebPlugin implements CameraPlugin {
   ) {
     if (customElements.get('pwa-camera-modal')) {
       const cameraModal: any = document.createElement('pwa-camera-modal');
+      cameraModal.facingMode =
+        options.direction === CameraDirection.Front ? 'user' : 'environment';
       document.body.appendChild(cameraModal);
       try {
         await cameraModal.componentOnReady();
@@ -67,17 +78,21 @@ export class CameraWeb extends WebPlugin implements CameraPlugin {
 
         cameraModal.present();
       } catch (e) {
-        this.fileInputExperience(options, resolve);
+        this.fileInputExperience(options, resolve, reject);
       }
     } else {
       console.error(
-        `Unable to load PWA Element 'pwa-camera-modal'. See the docs: https://capacitorjs.com/docs/pwa-elements.`,
+        `Unable to load PWA Element 'pwa-camera-modal'. See the docs: https://capacitorjs.com/docs/web/pwa-elements.`,
       );
-      this.fileInputExperience(options, resolve);
+      this.fileInputExperience(options, resolve, reject);
     }
   }
 
-  private fileInputExperience(options: ImageOptions, resolve: any) {
+  private fileInputExperience(
+    options: ImageOptions,
+    resolve: any,
+    reject: any,
+  ) {
     let input = document.querySelector(
       '#_capacitor-camera-input',
     ) as HTMLInputElement;
@@ -134,6 +149,10 @@ export class CameraWeb extends WebPlugin implements CameraPlugin {
           cleanup();
         }
       });
+      input.addEventListener('cancel', (_e: any) => {
+        reject(new CapacitorException('User cancelled photos app'));
+        cleanup();
+      });
     }
 
     input.accept = 'image/*';
@@ -153,6 +172,53 @@ export class CameraWeb extends WebPlugin implements CameraPlugin {
     input.click();
   }
 
+  private multipleFileInputExperience(resolve: any, reject: any) {
+    let input = document.querySelector(
+      '#_capacitor-camera-input-multiple',
+    ) as HTMLInputElement;
+
+    const cleanup = () => {
+      input.parentNode?.removeChild(input);
+    };
+
+    if (!input) {
+      input = document.createElement('input') as HTMLInputElement;
+      input.id = '_capacitor-camera-input-multiple';
+      input.type = 'file';
+      input.hidden = true;
+      input.multiple = true;
+      document.body.appendChild(input);
+      input.addEventListener('change', (_e: any) => {
+        const photos = [];
+        // eslint-disable-next-line @typescript-eslint/prefer-for-of
+        for (let i = 0; i < input.files!.length; i++) {
+          const file = input.files![i];
+          let format = 'jpeg';
+
+          if (file.type === 'image/png') {
+            format = 'png';
+          } else if (file.type === 'image/gif') {
+            format = 'gif';
+          }
+          photos.push({
+            webPath: URL.createObjectURL(file),
+            format: format,
+          });
+        }
+        resolve({ photos });
+        cleanup();
+      });
+      input.addEventListener('cancel', (_e: any) => {
+        reject(new CapacitorException('User cancelled photos app'));
+        cleanup();
+      });
+    }
+
+    input.accept = 'image/*';
+
+    input.click();
+  }
+
   private _getCameraPhoto(photo: Blob, options: ImageOptions) {
     return new Promise<Photo>((resolve, reject) => {
       const reader = new FileReader();
@@ -161,6 +227,7 @@ export class CameraWeb extends WebPlugin implements CameraPlugin {
         resolve({
           webPath: URL.createObjectURL(photo),
           format: format,
+          saved: false,
         });
       } else {
         reader.readAsDataURL(photo);
@@ -170,11 +237,13 @@ export class CameraWeb extends WebPlugin implements CameraPlugin {
             resolve({
               dataUrl: r,
               format: format,
+              saved: false,
             });
           } else {
             resolve({
               base64String: r.split(',')[1],
               format: format,
+              saved: false,
             });
           }
         };
@@ -210,6 +279,14 @@ export class CameraWeb extends WebPlugin implements CameraPlugin {
 
   async requestPermissions(): Promise<PermissionStatus> {
     throw this.unimplemented('Not implemented on web.');
+  }
+
+  async pickLimitedLibraryPhotos(): Promise<GalleryPhotos> {
+    throw this.unavailable('Not implemented on web.');
+  }
+
+  async getLimitedLibraryPhotos(): Promise<GalleryPhotos> {
+    throw this.unavailable('Not implemented on web.');
   }
 }
 

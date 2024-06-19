@@ -1,41 +1,17 @@
 {
-  "packages": [
-    "action-sheet",
-    "app",
-    "app-launcher",
-    "browser",
-    "camera",
-    "clipboard",
-    "device",
-    "dialog",
-    "filesystem",
-    "geolocation",
-    "haptics",
-    "keyboard",
-    "local-notifications",
-    "motion",
-    "network",
-    "push-notifications",
-    "screen-reader",
-    "share",
-    "splash-screen",
-    "status-bar",
-    "storage",
-    "text-zoom",
-    "toast"
-  ],
   "command": {
     "bootstrap": {
       "ci": false,
       "npmClientArgs": ["--no-package-lock"]
     },
     "version": {
-      "allowBranch": "main",
+      "allowBranch": "5.x",
       "conventionalCommits": true,
       "createRelease": "github",
       "message": "chore(release): publish [skip ci]",
       "tagVersionPrefix": ""
     }
   },
-  "version": "independent"
+  "version": "independent",
+  "$schema": "node_modules/lerna/schemas/lerna-schema.json"
 }

@@ -5,7 +5,7 @@ The StatusBar API Provides methods for configuring the style of the Status Bar, 
 ## Install
 
 ```bash
-npm install @capacitor/status-bar
+npm install @capacitor/status-bar@latest-5
 npx cap sync
 ```
 
@@ -114,6 +114,10 @@ show(options?: AnimationOptions | undefined) => Promise<void>
 ```
 
 Show the status bar.
+On iOS, if the status bar is initially hidden and the initial style is set to
+`UIStatusBarStyleLightContent`, first show call might present a glitch on the
+animation showing the text as dark and then transition to light. It's recommended
+to use <a href="#animation">`Animation.None`</a> as the animation on the first call.
 
 | Param         | Type                                                          |
 | ------------- | ------------------------------------------------------------- |
@@ -195,9 +199,9 @@ This method is only supported on Android.
 
 #### AnimationOptions
 
-| Prop            | Type                                            | Description                                                                                         | Since |
-| --------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------- | ----- |
-| **`animation`** | <code><a href="#animation">Animation</a></code> | The type of status bar animation used when showing or hiding. This option is only supported on iOS. | 1.0.0 |
+| Prop            | Type                                            | Description                                                                                         | Default                     | Since |
+| --------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------- | ----- |
+| **`animation`** | <code><a href="#animation">Animation</a></code> | The type of status bar animation used when showing or hiding. This option is only supported on iOS. | <code>Animation.Fade</code> | 1.0.0 |
 
 
 #### StatusBarInfo
@@ -222,19 +226,19 @@ This method is only supported on Android.
 
 #### Style
 
-| Members       | Value                  | Description                                                                                                                                                                                                                                                                                                                     | Since |
-| ------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| **`Dark`**    | <code>'DARK'</code>    | Light text for dark backgrounds.                                                                                                                                                                                                                                                                                                | 1.0.0 |
-| **`Light`**   | <code>'LIGHT'</code>   | Dark text for light backgrounds.                                                                                                                                                                                                                                                                                                | 1.0.0 |
-| **`Default`** | <code>'DEFAULT'</code> | On iOS 13 and newer the style is based on the device appearance. If the device is using Dark mode, the statusbar text will be light. If the device is using Light mode, the statusbar text will be dark. On iOS 12 and older the statusbar text will be dark. On Android the default will be the one the app was launched with. | 1.0.0 |
+| Members       | Value                  | Description                                                                                                                                                                                                                                            | Since |
+| ------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- |
+| **`Dark`**    | <code>'DARK'</code>    | Light text for dark backgrounds.                                                                                                                                                                                                                       | 1.0.0 |
+| **`Light`**   | <code>'LIGHT'</code>   | Dark text for light backgrounds.                                                                                                                                                                                                                       | 1.0.0 |
+| **`Default`** | <code>'DEFAULT'</code> | The style is based on the device appearance. If the device is using Dark mode, the statusbar text will be light. If the device is using Light mode, the statusbar text will be dark. On Android the default will be the one the app was launched with. | 1.0.0 |
 
 
 #### Animation
 
-| Members     | Value                | Description                       | Since |
-| ----------- | -------------------- | --------------------------------- | ----- |
-| **`None`**  | <code>'NONE'</code>  | No animation during show/hide.    | 1.0.0 |
-| **`Slide`** | <code>'SLIDE'</code> | Slide animation during show/hide. | 1.0.0 |
-| **`Fade`**  | <code>'FADE'</code>  | Fade animation during show/hide.  | 1.0.0 |
+| Members     | Value                | Description                                                   | Since |
+| ----------- | -------------------- | ------------------------------------------------------------- | ----- |
+| **`None`**  | <code>'NONE'</code>  | No animation during show/hide.                                | 1.0.0 |
+| **`Slide`** | <code>'SLIDE'</code> | Slide animation during show/hide. It doesn't work on iOS 15+. | 1.0.0 |
+| **`Fade`**  | <code>'FADE'</code>  | Fade animation during show/hide.                              | 1.0.0 |
 
 </docgen-api>

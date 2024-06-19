@@ -4,6 +4,7 @@ import android.Manifest;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 import com.capacitorjs.plugins.filesystem.exceptions.CopyFailedException;
 import com.capacitorjs.plugins.filesystem.exceptions.DirectoryExistsException;
 import com.capacitorjs.plugins.filesystem.exceptions.DirectoryNotFoundException;
@@ -17,7 +18,10 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
-import java.io.*;
+import com.getcapacitor.plugin.util.HttpRequestHandler;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -34,6 +38,7 @@ import org.json.JSONException;
 )
 public class FilesystemPlugin extends Plugin {
 
+    static final String PUBLIC_STORAGE = "publicStorage";
     private Filesystem implementation;
 
     @Override
@@ -169,6 +174,8 @@ public class FilesystemPlugin extends Plugin {
                 ex
             );
             call.reject("FILE_NOTCREATED");
+        } catch (IllegalArgumentException ex) {
+            call.reject("The supplied data is not valid base64 content.");
         }
     }
 
@@ -267,10 +274,37 @@ public class FilesystemPlugin extends Plugin {
             requestAllPermissions(call, "permissionCallback");
         } else {
             try {
-                String[] files = implementation.readdir(path, directory);
+                File[] files = implementation.readdir(path, directory);
+                JSArray filesArray = new JSArray();
                 if (files != null) {
+                    for (var i = 0; i < files.length; i++) {
+                        File fileObject = files[i];
+                        JSObject data = new JSObject();
+                        data.put("name", fileObject.getName());
+                        data.put("type", fileObject.isDirectory() ? "directory" : "file");
+                        data.put("size", fileObject.length());
+                        data.put("mtime", fileObject.lastModified());
+                        data.put("uri", Uri.fromFile(fileObject).toString());
+
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            try {
+                                BasicFileAttributes attr = Files.readAttributes(fileObject.toPath(), BasicFileAttributes.class);
+
+                                // use whichever is the oldest between creationTime and lastAccessTime
+                                if (attr.creationTime().toMillis() < attr.lastAccessTime().toMillis()) {
+                                    data.put("ctime", attr.creationTime().toMillis());
+                                } else {
+                                    data.put("ctime", attr.lastAccessTime().toMillis());
+                                }
+                            } catch (Exception ex) {}
+                        } else {
+                            data.put("ctime", null);
+                        }
+                        filesArray.put(data);
+                    }
+
                     JSObject ret = new JSObject();
-                    ret.put("files", JSArray.from(files));
+                    ret.put("files", filesArray);
                     call.resolve(ret);
                 } else {
                     call.reject("Unable to read directory");
@@ -347,6 +381,35 @@ public class FilesystemPlugin extends Plugin {
         this._copy(call, false);
     }
 
+    @PluginMethod
+    public void downloadFile(PluginCall call) {
+        try {
+            String directory = call.getString("directory", Environment.DIRECTORY_DOWNLOADS);
+
+            if (isPublicDirectory(directory) && !isStoragePermissionGranted()) {
+                requestAllPermissions(call, "permissionCallback");
+            } else {
+                HttpRequestHandler.ProgressEmitter emitter = (bytes, contentLength) -> {
+                    JSObject ret = new JSObject();
+                    ret.put("url", call.getString("url"));
+                    ret.put("bytes", bytes);
+                    ret.put("contentLength", contentLength);
+
+                    notifyListeners("progress", ret);
+                };
+
+                JSObject response = implementation.downloadFile(call, bridge, emitter);
+                // update mediaStore index only if file was written to external storage
+                if (isPublicDirectory(directory)) {
+                    MediaScannerConnection.scanFile(getContext(), new String[] { response.getString("path") }, null, null);
+                }
+                call.resolve(response);
+            }
+        } catch (Exception ex) {
+            call.reject("Error downloading file: " + ex.getLocalizedMessage(), ex);
+        }
+    }
+
     private void _copy(PluginCall call, Boolean doRename) {
         String from = call.getString("from");
         String to = call.getString("to");
@@ -364,12 +427,40 @@ public class FilesystemPlugin extends Plugin {
             }
         }
         try {
-            implementation.copy(from, directory, to, toDirectory, doRename);
-            call.resolve();
+            File file = implementation.copy(from, directory, to, toDirectory, doRename);
+            if (!doRename) {
+                JSObject result = new JSObject();
+                result.put("uri", Uri.fromFile(file).toString());
+                call.resolve(result);
+            } else {
+                call.resolve();
+            }
         } catch (CopyFailedException ex) {
             call.reject(ex.getMessage());
         } catch (IOException ex) {
             call.reject("Unable to perform action: " + ex.getLocalizedMessage());
+        }
+    }
+
+    @PluginMethod
+    public void checkPermissions(PluginCall call) {
+        if (isStoragePermissionGranted()) {
+            JSObject permissionsResultJSON = new JSObject();
+            permissionsResultJSON.put(PUBLIC_STORAGE, "granted");
+            call.resolve(permissionsResultJSON);
+        } else {
+            super.checkPermissions(call);
+        }
+    }
+
+    @PluginMethod
+    public void requestPermissions(PluginCall call) {
+        if (isStoragePermissionGranted()) {
+            JSObject permissionsResultJSON = new JSObject();
+            permissionsResultJSON.put(PUBLIC_STORAGE, "granted");
+            call.resolve(permissionsResultJSON);
+        } else {
+            super.requestPermissions(call);
         }
     }
 
@@ -413,15 +504,19 @@ public class FilesystemPlugin extends Plugin {
             case "stat":
                 stat(call);
                 break;
+            case "downloadFile":
+                downloadFile(call);
+                break;
         }
     }
 
     /**
      * Checks the the given permission is granted or not
-     * @return Returns true if the permission is granted and false if it is denied.
+     * @return Returns true if the app is running on Android 30 or newer or if the permission is already granted
+     * or false if it is denied.
      */
     private boolean isStoragePermissionGranted() {
-        return getPermissionState("publicStorage") == PermissionState.GRANTED;
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || getPermissionState(PUBLIC_STORAGE) == PermissionState.GRANTED;
     }
 
     /**

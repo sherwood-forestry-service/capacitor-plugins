@@ -23,10 +23,9 @@ export enum Style {
   Light = 'LIGHT',
 
   /**
-   * On iOS 13 and newer the style is based on the device appearance.
+   * The style is based on the device appearance.
    * If the device is using Dark mode, the statusbar text will be light.
    * If the device is using Light mode, the statusbar text will be dark.
-   * On iOS 12 and older the statusbar text will be dark.
    * On Android the default will be the one the app was launched with.
    *
    * @since 1.0.0
@@ -39,6 +38,8 @@ export interface AnimationOptions {
    * The type of status bar animation used when showing or hiding.
    *
    * This option is only supported on iOS.
+   *
+   * @default Animation.Fade
    *
    * @since 1.0.0
    */
@@ -55,6 +56,9 @@ export enum Animation {
 
   /**
    * Slide animation during show/hide.
+   * It doesn't work on iOS 15+.
+   *
+   * @deprecated Use Animation.Fade or Animation.None instead.
    *
    * @since 1.0.0
    */
@@ -141,6 +145,10 @@ export interface StatusBarPlugin {
 
   /**
    * Show the status bar.
+   * On iOS, if the status bar is initially hidden and the initial style is set to
+   * `UIStatusBarStyleLightContent`, first show call might present a glitch on the
+   * animation showing the text as dark and then transition to light. It's recommended
+   * to use `Animation.None` as the animation on the first call.
    *
    * @since 1.0.0
    */

@@ -1,5 +1,6 @@
 package com.capacitorjs.plugins.device;
 
+import android.os.Build;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -21,7 +22,7 @@ public class DevicePlugin extends Plugin {
     public void getId(PluginCall call) {
         JSObject r = new JSObject();
 
-        r.put("uuid", implementation.getUuid());
+        r.put("identifier", implementation.getUuid());
 
         call.resolve(r);
     }
@@ -33,9 +34,12 @@ public class DevicePlugin extends Plugin {
         r.put("memUsed", implementation.getMemUsed());
         r.put("diskFree", implementation.getDiskFree());
         r.put("diskTotal", implementation.getDiskTotal());
+        r.put("realDiskFree", implementation.getRealDiskFree());
+        r.put("realDiskTotal", implementation.getRealDiskTotal());
         r.put("model", android.os.Build.MODEL);
         r.put("operatingSystem", "android");
         r.put("osVersion", android.os.Build.VERSION.RELEASE);
+        r.put("androidSDKVersion", Build.VERSION.SDK_INT);
         r.put("platform", implementation.getPlatform());
         r.put("manufacturer", android.os.Build.MANUFACTURER);
         r.put("isVirtual", implementation.isVirtual());
@@ -59,6 +63,13 @@ public class DevicePlugin extends Plugin {
     public void getLanguageCode(PluginCall call) {
         JSObject ret = new JSObject();
         ret.put("value", Locale.getDefault().getLanguage());
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void getLanguageTag(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("value", Locale.getDefault().toLanguageTag());
         call.resolve(ret);
     }
 }

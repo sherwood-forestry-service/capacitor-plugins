@@ -5,7 +5,7 @@ The Clipboard API enables copy and pasting to/from the system clipboard.
 ## Install
 
 ```bash
-npm install @capacitor/clipboard
+npm install @capacitor/clipboard@latest-5
 npx cap sync
 ```
 
@@ -23,7 +23,7 @@ const writeToClipboard = async () => {
 const checkClipboard = async () => {
   const { type, value } = await Clipboard.read();
 
-  alert(`Got ${type} from clipboard: ${value}`);
+  console.log(`Got ${type} from clipboard: ${value}`);
 };
 ```
 

@@ -5,7 +5,7 @@ The Screen Reader API provides access to TalkBack/VoiceOver/etc. and provides si
 ## Install
 
 ```bash
-npm install @capacitor/screen-reader
+npm install @capacitor/screen-reader@latest-5
 npx cap sync
 ```
 
@@ -14,14 +14,14 @@ npx cap sync
 ```typescript
 import { ScreenReader } from '@capacitor/screen-reader';
 
-ScreenReader.addListener('screenReaderStateChange', ({ value }) => {
+ScreenReader.addListener('stateChange', ({ value }) => {
   console.log(`Screen reader is now ${value ? 'on' : 'off'}`);
 });
 
 const checkScreenReaderEnabled = async () => {
   const { value } = await ScreenReader.isEnabled();
 
-  alert('Voice over enabled? ' + value);
+  console.log('Voice over enabled? ' + value);
 };
 
 const sayHello = async () => {

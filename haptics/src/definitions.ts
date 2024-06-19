@@ -59,7 +59,7 @@ export interface ImpactOptions {
 
 export enum ImpactStyle {
   /**
-   * A collision between small, light user interface elements
+   * A collision between large, heavy user interface elements
    *
    * @since 1.0.0
    */
@@ -118,8 +118,6 @@ export enum NotificationType {
 export interface VibrateOptions {
   /**
    * Duration of the vibration in milliseconds.
-   *
-   * Not supported in iOS.
    *
    * @default 300
    * @since 1.0.0

@@ -1,11 +1,24 @@
 # @capacitor/app-launcher
 
-The AppLauncher API allows your app to open other apps
+The AppLauncher API allows your app to check if an app can be opened and open it.
+
+On iOS you can only open apps if you know their url scheme.
+
+On Android you can open apps if you know their url scheme or use their public package name.
+
+**Note:** On [Android 11](https://developer.android.com/about/versions/11/privacy/package-visibility) and newer you have to add the app package names you want to query in the `AndroidManifest.xml` inside the `queries` tag.
+
+Example:
+```xml
+<queries>
+  <package android:name="com.getcapacitor.myapp" />
+</queries>
+```
 
 ## Install
 
 ```bash
-npm install @capacitor/app-launcher
+npm install @capacitor/app-launcher@latest-5
 npx cap sync
 ```
 
@@ -17,7 +30,7 @@ import { AppLauncher } from '@capacitor/app-launcher';
 const checkCanOpenUrl = async () => {
   const { value } = await AppLauncher.canOpenUrl({ url: 'com.getcapacitor.myapp' });
 
-  alert('Can open url: ', value);
+  console.log('Can open url: ', value);
 };
 
 const openPortfolioPage = async () => {
@@ -73,6 +86,8 @@ openUrl(options: OpenURLOptions) => Promise<OpenURLResult>
 ```
 
 Open an app with the given URL.
+On iOS the URL should be a known URLScheme.
+On Android the URL can be a known URLScheme or an app package name.
 
 | Param         | Type                                                      |
 | ------------- | --------------------------------------------------------- |

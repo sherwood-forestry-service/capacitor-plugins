@@ -28,11 +28,7 @@ public class StatusBarPlugin: CAPPlugin {
             if style == "DARK" {
                 bridge?.statusBarStyle = .lightContent
             } else if style == "LIGHT" {
-                if #available(iOS 13.0, *) {
-                    bridge?.statusBarStyle = .darkContent
-                } else {
-                    bridge?.statusBarStyle = .default
-                }
+                bridge?.statusBarStyle = .darkContent
             } else if style == "DEFAULT" {
                 bridge?.statusBarStyle = .default
             }
@@ -46,13 +42,13 @@ public class StatusBarPlugin: CAPPlugin {
     }
 
     func setAnimation(_ call: CAPPluginCall) {
-        let animation = call.getString("animation", "SLIDE")
-        if animation == "FADE" {
-            bridge?.statusBarAnimation = .fade
+        let animation = call.getString("animation", "FADE")
+        if animation == "SLIDE" {
+            bridge?.statusBarAnimation = .slide
         } else if animation == "NONE" {
             bridge?.statusBarAnimation = .none
         } else {
-            bridge?.statusBarAnimation = .slide
+            bridge?.statusBarAnimation = .fade
         }
     }
 
@@ -74,25 +70,17 @@ public class StatusBarPlugin: CAPPlugin {
                 return
             }
             let style: String
-            if #available(iOS 13.0, *) {
-                switch bridge.statusBarStyle {
-                case .default:
-                    if bridge.userInterfaceStyle == UIUserInterfaceStyle.dark {
-                        style = "DARK"
-                    } else {
-                        style = "LIGHT"
-                    }
-                case .lightContent:
-                    style = "DARK"
-                default:
-                    style = "LIGHT"
-                }
-            } else {
-                if bridge.statusBarStyle == .lightContent {
+            switch bridge.statusBarStyle {
+            case .default:
+                if bridge.userInterfaceStyle == UIUserInterfaceStyle.dark {
                     style = "DARK"
                 } else {
                     style = "LIGHT"
                 }
+            case .lightContent:
+                style = "DARK"
+            default:
+                style = "LIGHT"
             }
 
             call.resolve([

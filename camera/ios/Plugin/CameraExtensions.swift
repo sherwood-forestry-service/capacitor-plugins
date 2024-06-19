@@ -27,11 +27,8 @@ extension PHAuthorizationStatus: CameraAuthorizationState {
             return "denied"
         case .authorized:
             return "granted"
-        #if swift(>=5.3)
-        // poor proxy for Xcode 12/iOS 14, should be removed once building with Xcode 12 is required
         case .limited:
             return "limited"
-        #endif
         case .notDetermined:
             fallthrough
         @unknown default:
@@ -52,7 +49,7 @@ internal extension PHAsset {
         options.version = .current
 
         var result: [String: Any] = [:]
-        _ = PHCachingImageManager().requestImageData(for: self, options: options) { (data, _, _, _) in
+        _ = PHCachingImageManager().requestImageDataAndOrientation(for: self, options: options) { (data, _, _, _) in
             if let data = data as NSData? {
                 let options = [kCGImageSourceShouldCache as String: kCFBooleanFalse] as CFDictionary
                 if let imgSrc = CGImageSourceCreateWithData(data, options),
@@ -88,18 +85,16 @@ internal extension UIImage {
         }
         // adjust to preserve aspect ratio
         var targetWidth = min(imageWidth, maxWidth)
-        var targetHeight = (imageHeight * maxWidth) / imageWidth
+        var targetHeight = (imageHeight * targetWidth) / imageWidth
         if targetHeight > maxHeight {
             targetWidth = (imageWidth * maxHeight) / imageHeight
             targetHeight = maxHeight
         }
         // generate the new image and return
-        let format: UIGraphicsImageRendererFormat = UIGraphicsImageRendererFormat.default()
-        format.scale = 1.0
-        format.opaque = false
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: targetWidth, height: targetHeight), format: format)
-        return renderer.image { (_) in
-            self.draw(in: CGRect(origin: .zero, size: CGSize(width: targetWidth, height: targetHeight)))
-        }
+        UIGraphicsBeginImageContextWithOptions(.init(width: targetWidth, height: targetHeight), false, 1.0) // size, opaque and scale
+        self.draw(in: .init(origin: .zero, size: .init(width: targetWidth, height: targetHeight)))
+        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return resizedImage ?? self
     }
 }

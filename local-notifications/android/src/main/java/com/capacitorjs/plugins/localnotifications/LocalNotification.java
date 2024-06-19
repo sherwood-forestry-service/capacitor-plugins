@@ -224,6 +224,11 @@ public class LocalNotification {
         for (JSONObject jsonNotification : notificationsJson) {
             JSObject notification = null;
             try {
+                long identifier = jsonNotification.getLong("id");
+                if (identifier > Integer.MAX_VALUE || identifier < Integer.MIN_VALUE) {
+                    call.reject("The identifier should be a Java int");
+                    return null;
+                }
                 notification = JSObject.fromJSONObject(jsonNotification);
             } catch (JSONException e) {
                 call.reject("Invalid JSON object sent to NotificationPlugin", e);
@@ -312,7 +317,7 @@ public class LocalNotification {
                 jsSchedule.put("at", schedule.getAt());
                 jsSchedule.put("every", schedule.getEvery());
                 jsSchedule.put("count", schedule.getCount());
-                jsSchedule.put("on", schedule.getOn());
+                jsSchedule.put("on", schedule.getOnObj());
                 jsSchedule.put("repeats", schedule.isRepeating());
                 jsNotification.put("schedule", jsSchedule);
             }

@@ -6,6 +6,7 @@ import type {
   DeviceInfo,
   DevicePlugin,
   GetLanguageCodeResult,
+  LanguageTag,
 } from './definitions';
 
 declare global {
@@ -24,7 +25,7 @@ declare global {
 export class DeviceWeb extends WebPlugin implements DevicePlugin {
   async getId(): Promise<DeviceId> {
     return {
-      uuid: this.getUid(),
+      identifier: this.getUid(),
     };
   }
 
@@ -66,6 +67,12 @@ export class DeviceWeb extends WebPlugin implements DevicePlugin {
   }
 
   async getLanguageCode(): Promise<GetLanguageCodeResult> {
+    return {
+      value: navigator.language.split('-')[0].toLowerCase(),
+    };
+  }
+
+  async getLanguageTag(): Promise<LanguageTag> {
     return {
       value: navigator.language,
     };
@@ -120,9 +127,9 @@ export class DeviceWeb extends WebPlugin implements DevicePlugin {
     }
 
     // Check for browsers based on non-standard javascript apis, only not user agent
-    const isFirefox = !!window.InstallTrigger;
     const isSafari = !!window.ApplePaySession;
     const isChrome = !!window.chrome;
+    const isFirefox = /Firefox/.test(ua);
     const isEdge = /Edg/.test(ua);
     const isFirefoxIOS = /FxiOS/.test(ua);
     const isChromeIOS = /CriOS/.test(ua);
@@ -171,7 +178,7 @@ export class DeviceWeb extends WebPlugin implements DevicePlugin {
   }
 
   getUid(): string {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.localStorage) {
       let uid = window.localStorage.getItem('_capuid');
       if (uid) {
         return uid;
