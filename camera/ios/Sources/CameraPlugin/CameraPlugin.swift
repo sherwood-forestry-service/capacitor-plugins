@@ -21,6 +21,9 @@ public class CameraPlugin: CAPPlugin, CAPBridgedPlugin {
     private let defaultDirection = CameraDirection.rear
     private var multiple = false
 
+    private var currentLocation: CLLocation? = nil
+    private var currentHeading: CLHeading? = nil
+
     private var imageCounter = 0
 
     @objc override public func checkPermissions(_ call: CAPPluginCall) {
@@ -422,6 +425,31 @@ private extension CameraPlugin {
     }
 
     func showCamera() {
+        Locator.shared.authorize()
+        Locator.shared.getLocation { result in
+            print("Location Result: \(String(describing: result))")
+            switch result {
+                case Locator.Result.Success(let locator):
+                    if let location = locator.location {
+                        self.currentLocation = location
+                    }
+                case Locator.Result.Failure(let error):
+                    print(error)
+            }
+         }
+
+        Locator.shared.getHeading { result in
+            print("Heading Result: \(String(describing: result))")
+            switch result {
+                case Locator.Result.Success(let locator):
+                    if let heading = locator.heading {
+                        self.currentHeading = heading
+                    }
+                case Locator.Result.Failure(let error):
+                    print(error)
+            }
+        }
+
         // check if we have a camera
         if (bridge?.isSimEnvironment ?? false) || !UIImagePickerController.isSourceTypeAvailable(UIImagePickerController.SourceType.camera) {
             CAPLog.print("⚡️ ", self.pluginId, "-", "Camera not available in simulator")
@@ -562,6 +590,13 @@ private extension CameraPlugin {
         if let asset = info[UIImagePickerController.InfoKey.phAsset] as? PHAsset {
             metadata = asset.imageData
         }
+
+        if let currentLocation = self.currentLocation {
+            metadata[kCGImagePropertyGPSDictionary as String] = currentLocation.exifMetadata(heading: self.currentHeading)
+        }
+
+        print("Meta Data: \(String(describing: metadata))")
+
         // get the result
         var result = processedImage(from: image, with: metadata)
         result.flags = flags
